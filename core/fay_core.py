@@ -333,14 +333,17 @@ class FeiFei:
                     elif result <= 0.2:
                        self.mood = self.mood - (chat_perception / 100.0)
                 else:
-                    result = baidu_emotion.get_sentiment(self.q_msg)
-                    chat_perception = perception["chat"]
-                    if result >= 2:
-                        self.mood = self.mood + (chat_perception / 150.0)
-                    elif result == 0:
-                        self.mood = self.mood - (chat_perception / 100.0)
+                    if str(cfg.baidu_emotion_api_key) == '' or str(cfg.baidu_emotion_app_id) == '' or str(cfg.baidu_emotion_secret_key) == '':
+                        self.mood = 0
+                    else:
+                        result = int(baidu_emotion.get_sentiment(self.q_msg))
+                        chat_perception = perception["chat"]
+                        if result >= 2:
+                            self.mood = self.mood + (chat_perception / 150.0)
+                        elif result == 0:
+                            self.mood = self.mood - (chat_perception / 100.0)
             except BaseException as e:
-                self.mood = 0.5
+                self.mood = 0
                 print("[System] 情绪更新错误！")
                 print(e)
 
