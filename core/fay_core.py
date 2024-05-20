@@ -93,8 +93,34 @@ def determine_nlp_strategy(msg):
 
 #文本消息处理
 def send_for_answer(msg):
-        interact = Interact("audio", 1, {'user': '', 'msg': msg})
-        fay_booter.feiFei.on_interact(interact) 
+        contentdb = content_db.new_instance()
+        contentdb.add_content('member','send',msg)
+        wsa_server.get_web_instance().add_cmd({"panelReply": {"type":"member","content":msg}})
+        textlist = []
+        text = None
+        text = qa_service.question('qa',msg)
+
+        # 人设问答
+        if text is not None:
+            keyword = qa_service.question('Persona',msg)
+            if keyword is not None:
+                text = config_util.config["attribute"][keyword]
+
+        # 全局问答
+        if text is None:
+            text,textlist = determine_nlp_strategy(msg)
+                
+        contentdb.add_content('fay','send',text)
+        wsa_server.get_web_instance().add_cmd({"panelReply": {"type":"fay","content":text}})
+        if len(textlist) > 1:
+            i = 1
+            while i < len(textlist):
+                  contentdb.add_content('fay','send',textlist[i]['text'])
+                  wsa_server.get_web_instance().add_cmd({"panelReply": {"type":"fay","content":textlist[i]['text']}})
+                  i+= 1
+        fay_booter.feiFei.a_msg = text
+        MyThread(target=fay_booter.feiFei.say, args=['interact']).start()         
+        return text
 
 
 class FeiFei:
@@ -166,7 +192,7 @@ class FeiFei:
                     self.muting = True
                     self.speaking = True
                     self.a_msg = "好的"
-                    MyThread(target=self.__say, args=['interact']).start()
+                    MyThread(target=self.say, args=['interact']).start()
                     time.sleep(0.5)
                     wsa_server.get_web_instance().add_cmd({"panelMsg": ""})
                     if not cfg.config["interact"]["playSound"]: # 非展板播放
@@ -269,7 +295,7 @@ class FeiFei:
                         content = {'Topic': 'Unreal', 'Data': {'Key': 'log', 'Value': self.a_msg}}
                         wsa_server.get_instance().add_cmd(content)
                     self.last_speak_data = self.a_msg 
-                    MyThread(target=self.__say, args=['interact']).start()
+                    MyThread(target=self.say, args=['interact']).start()
                     
                         
             except BaseException as e:
@@ -380,7 +406,7 @@ class FeiFei:
         return sayType
 
     # 合成声音
-    def __say(self, styleType):
+    def say(self, styleType):
         try:
             if len(self.a_msg) < 1:
                 self.speaking = False
