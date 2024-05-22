@@ -23,7 +23,6 @@ ASR_mode = None
 local_asr_ip = None 
 local_asr_port = None 
 ltp_mode = None
-is_proxy = None
 key_xingchen_api_key = None
 xingchen_characterid = None
 gpt_base_url = None
@@ -53,7 +52,6 @@ def load_config():
     global local_asr_ip 
     global local_asr_port
     global ltp_mode 
-    global is_proxy
     global key_xingchen_api_key
     global xingchen_characterid
     global gpt_base_url
@@ -80,7 +78,6 @@ def load_config():
     local_asr_ip = system_config.get('key', 'local_asr_ip')
     local_asr_port = system_config.get('key', 'local_asr_port')
     proxy_config = system_config.get('key', 'proxy_config')
-    is_proxy = system_config.get('key', 'is_proxy')
     ltp_mode = system_config.get('key', 'ltp_mode')
     key_xingchen_api_key = system_config.get('key', 'xingchen_api_key')
     xingchen_characterid = system_config.get('key', 'xingchen_characterid')
