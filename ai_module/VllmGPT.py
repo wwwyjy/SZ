@@ -17,27 +17,14 @@ class VllmGPT:
 
     def question(self,cont):
         chat_list = []
-        # contentdb = content_db.new_instance()
-        # list = contentdb.get_list('all','desc',11)
-        # answer_info = dict()
-        # chat_list = []
-        # i = len(list)-1
-        # while i >= 0:
-        #     answer_info = dict()
-        #     if list[i][0] == "member":
-        #         answer_info["role"] = "user"
-        #         answer_info["content"] = list[i][2]
-        #     elif list[i][0] == "fay":
-        #         answer_info["role"] = "bot"
-        #         answer_info["content"] = list[i][2]
-        #     chat_list.append(answer_info)
-        #     i -= 1
-        content = {
-            "model": self.model,
-            "prompt":"请简单回复我。" +  cont,
-            "history":chat_list}
-        url = self.__URL
-        req = json.dumps(content)
+        url = "http://127.0.0.1:8101/v1/completions"
+        req = json.dumps({
+            "model": "THUDM/chatglm3-6b",
+            "prompt": cont,
+            "max_tokens": 768,
+            "temperature": 0})
+        print(url)
+        print(req)
         
         headers = {'content-type': 'application/json'}
         r = requests.post(url, headers=headers, data=req)
@@ -47,35 +34,23 @@ class VllmGPT:
 
     def question2(self,cont):
         chat_list = []
-        # contentdb = content_db.new_instance()
-        # list = contentdb.get_list('all','desc',11)
-        # answer_info = dict()
-        # chat_list = []
-        # i = len(list)-1
-        # while i >= 0:
-        #     answer_info = dict()
-        #     if list[i][0] == "member":
-        #         answer_info["role"] = "user"
-        #         answer_info["content"] = list[i][2]
-        #     elif list[i][0] == "fay":
-        #         answer_info["role"] = "bot"
-        #         answer_info["content"] = list[i][2]
-        #     chat_list.append(answer_info)
-        #     i -= 1
+        current_chat={"role": "user", "content": cont}
+        chat_list.append(current_chat)
         content = {
             "model": self.model,
-            "prompt":"请简单回复我。" +  cont,
-            "history":chat_list}
+            "messages": chat_list,
+            "max_tokens": 768,
+            "temperature": 0.3,
+            "user":"live-virtual-digital-person"}
         url = self.__URL2
         req = json.dumps(content)
-        
-        headers = {'content-type': 'application/json'}
-        r = requests.post(url, headers=headers, data=req)
+        headers = {'content-type': 'application/json', 'Authorization': 'Bearer '}
+        r = requests.post(url, headers=headers, json=content)
         res = json.loads(r.text)
         
         return res['choices'][0]['message']['content']
     
 if __name__ == "__main__":
-    vllm = VllmGPT('192.168.1.3','8101')
-    req = vllm.question("你叫什么名字啊今年多大了")
+    vllm = VllmGPT('127.0.0.1','8101','Qwen-7B-Chat')
+    req = vllm.question2("你叫什么名字啊今年多大了")
     print(req)

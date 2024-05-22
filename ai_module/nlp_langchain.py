@@ -57,6 +57,7 @@ def load_pdf_and_save_to_index(file_path, index_name):
         index.vectorstore.persist()
     except Exception as e:
         util.log(1, f"加载 {file_path} 失败...")
+        print(e)
 
 def load_index(index_name):
     index_path = get_index_path(index_name)
@@ -67,7 +68,8 @@ def load_index(index_name):
 def save_all():
     os.environ['OPENAI_API_KEY'] = cfg.key_gpt_api_key
     os.environ['OPENAI_API_BASE'] = cfg.gpt_base_url
-    
+    if str(cfg.proxy_config) != '':
+            os.environ["OPENAI_PROXY"] = cfg.proxy_config
     load_all_pdfs(folder_path)
 
 
@@ -84,7 +86,7 @@ def question(cont):
         save_all()
         info = generate_prompt(cont)
         index = load_index(index_name)    
-        llm = ChatOpenAI(model="gpt-4-0125-preview")
+        llm = ChatOpenAI(model="gpt-3.5-turbo-16k")
         ans = index.query(info, llm, chain_type="map_reduce")
         return ans
     except Exception as e:
