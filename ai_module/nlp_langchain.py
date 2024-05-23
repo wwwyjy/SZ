@@ -68,7 +68,7 @@ def load_index(index_name):
 def save_all():
     os.environ['OPENAI_API_KEY'] = cfg.key_gpt_api_key
     os.environ['OPENAI_API_BASE'] = cfg.gpt_base_url
-    if str(cfg.proxy_config) != '':
+    if cfg.proxy_config != None:
             os.environ["OPENAI_PROXY"] = cfg.proxy_config
     load_all_pdfs(folder_path)
 
