@@ -24,3 +24,4 @@ pydub
 cemotion
 langchain==0.0.336
 chromadb
+tenacity==8.2.3
