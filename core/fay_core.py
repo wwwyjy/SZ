@@ -18,7 +18,8 @@ import numpy as np
 # import tensorflow as tf
 import fay_booter
 from ai_module import baidu_emotion
-from ai_module.ms_tts_sdk import Speech
+
+
 from core import wsa_server, tts_voice, song_player
 from core.interact import Interact
 from core.tts_voice import EnumVoice
@@ -28,6 +29,11 @@ from core import qa_service
 
 import pygame
 from utils import config_util as cfg
+cfg.load_config()
+if cfg.tts_module =='ali':
+    from ai_module.ali_tss import Speech
+else:
+    from ai_module.ms_tts_sdk import Speech
 from core import content_db
 from datetime import datetime
 from ai_module import nlp_cemotion
@@ -40,6 +46,7 @@ from ai_module import nlp_lingju
 from ai_module import nlp_xingchen
 from ai_module import nlp_langchain
 from ai_module import nlp_ollama_api
+
 
 import platform
 if platform.system() == "Windows":

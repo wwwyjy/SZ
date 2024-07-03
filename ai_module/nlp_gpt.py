@@ -71,7 +71,6 @@ def question(cont):
         response = session.post(url, json=data, headers=headers, verify=False)
         response.raise_for_status()  # 检查响应状态码是否为200
         result = json.loads(response.text)
-        print(result)
         response_text = result["choices"][0]["message"]["content"]
     except requests.exceptions.RequestException as e:
         print(f"请求失败: {e}")

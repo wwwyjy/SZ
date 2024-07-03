@@ -33,6 +33,7 @@ class Authorize_Tb:
     #添加
     @synchronized
     def add(self,userid,accesstoken,expirestime):
+        self.init_tb()
         conn = sqlite3.connect("fay.db")
         cur = conn.cursor()
         cur.execute("insert into T_Authorize (userid,accesstoken,expirestime,createtime) values (?,?,?,?)",(userid,accesstoken,expirestime,int(time.time())))
@@ -44,6 +45,7 @@ class Authorize_Tb:
     #查询
     @synchronized
     def find_by_userid(self,userid):
+        self.init_tb()
         conn = sqlite3.connect("fay.db")
         cur = conn.cursor()
         cur.execute("select accesstoken,expirestime from T_Authorize where userid = ? order by id desc limit 1",(userid,))
@@ -54,6 +56,7 @@ class Authorize_Tb:
     # 更新token
     @synchronized
     def update_by_userid(self, userid, new_accesstoken, new_expirestime):
+        self.init_tb()
         conn = sqlite3.connect("fay.db")
         cur = conn.cursor()
         cur.execute("UPDATE T_Authorize SET accesstoken = ?, expirestime = ? WHERE userid = ?", 
