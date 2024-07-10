@@ -20,12 +20,11 @@ def question(cont):
        
     session = requests.Session()
     session.verify = False
-    if httpproxy != None:
+    if httpproxy != None and httpproxy != '':
             session.proxies = {
                 "https": "https://" + httpproxy,
                 "http": "http://" + httpproxy
             }
-
 
     model_engine = cfg.gpt_model_engine
     #此处可以定义角色的行为和特征，假装xx模型可以绕过chatgpt信息检查
