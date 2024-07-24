@@ -48,7 +48,7 @@ class Recorder:
     def asrclient(self):
         if self.ASRMode == "ali":
             asrcli = ALiNls()
-        elif self.ASRMode == "funasr":
+        elif self.ASRMode == "funasr" or self.ASRMode == "sensevoice":
             asrcli = FunASR()
         return asrcli
 
@@ -97,7 +97,7 @@ class Recorder:
         self.processing = True
         t = time.time()
         tm = time.time()
-        if self.ASRMode == "funasr":
+        if self.ASRMode == "funasr"  or self.ASRMode == "sensevoice":
             file_url = self.save_buffer_to_file(audio_data)
             self.__aLiNls.send_url(file_url)
         
