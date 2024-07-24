@@ -6,7 +6,10 @@ from PyQt5 import QtGui
 from PyQt5.QtWidgets import QApplication
 
 from ai_module import ali_nls
-from ai_module import nlp_langchain
+if config_util.key_chat_module == 'langchain':
+    from ai_module import nlp_langchain
+if config_util.key_chat_module == 'privategpt':    
+    from ai_module import nlp_privategpt
 from core import wsa_server
 from gui import flask_server
 from gui.window import MainWindow
@@ -61,6 +64,8 @@ if __name__ == '__main__':
     flask_server.start() 
     if config_util.key_chat_module == 'langchain':
         nlp_langchain.save_all()
+    if config_util.key_chat_module == 'privategpt':
+        nlp_privategpt.save_all()
     app = QApplication(sys.argv)
     app.setWindowIcon(QtGui.QIcon('icon.png'))
     win = MainWindow()

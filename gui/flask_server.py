@@ -1,4 +1,4 @@
-import imp
+import importlib
 import json
 import time
 
@@ -40,7 +40,6 @@ def __get_device_list():
 @__app.route('/api/submit', methods=['post'])
 def api_submit():
     data = request.values.get('data')
-    # print(data)
     config_data = json.loads(data)
     if(config_data['config']['source']['record']['enabled']):
         config_data['config']['source']['record']['channels'] = 0
@@ -51,7 +50,6 @@ def api_submit():
                  config_data['config']['source']['record']['channels'] = devInfo['maxInputChannels']
 
     config_util.save_config(config_data['config'])
-
 
     return '{"result":"successful"}'
 
@@ -210,7 +208,6 @@ def api_get_Msg():
 @__app.route('/api/send/v1/chat/completions', methods=['post'])
 def api_send_v1_chat_completions():
     data = request.json  # 解析JSON数据
-    # 检查'messages'键是否存在于数据中
     last_content = ""
     if 'messages' in data and data['messages']:
         last_message = data['messages'][-1]  # 获取最后一条消息
@@ -241,8 +238,6 @@ def api_send_v1_chat_completions():
   },
   "system_fingerprint": "fp_04de91a479"
 }
-
-
 
 @__app.route('/', methods=['get'])
 def home_get():

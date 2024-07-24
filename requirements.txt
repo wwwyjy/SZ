@@ -6,14 +6,12 @@ ws4py~=0.5.1
 pyqt5~=5.15.6
 flask~=3.0.0
 openpyxl~=3.0.9
-pygame~=2.1.2
 flask_cors~=3.0.10
 PyQtWebEngine~=5.15.5
 eyed3~=0.9.6
 websocket-client
 azure-cognitiveservices-speech
-aliyun-python-sdk-core==2.13.3
-scipy~=1.10.0
+aliyun-python-sdk-core
 simhash
 pytz
 gevent~=22.10.1
@@ -25,3 +23,5 @@ cemotion
 langchain==0.0.336
 chromadb
 tenacity==8.2.3
+pygame
+scipy
