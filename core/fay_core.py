@@ -47,7 +47,6 @@ from ai_module import nlp_lingju
 from ai_module import nlp_xingchen
 from ai_module import nlp_langchain
 from ai_module import nlp_ollama_api
-from ai_module import nlp_privategpt
 
 
 import platform
@@ -63,8 +62,7 @@ modules = {
     "nlp_lingju": nlp_lingju,
     "nlp_xingchen": nlp_xingchen,
     "nlp_langchain": nlp_langchain,
-    "nlp_ollama_api": nlp_ollama_api,
-    "nlp_privategpt" : nlp_privategpt
+    "nlp_ollama_api": nlp_ollama_api
 }
 
 
