@@ -6,6 +6,8 @@ from PyQt5 import QtGui
 from PyQt5.QtWidgets import QApplication
 
 from ai_module import ali_nls
+from utils import config_util
+config_util.load_config()
 if config_util.key_chat_module == 'langchain':
     from ai_module import nlp_langchain
 if config_util.key_chat_module == 'privategpt':    
@@ -13,7 +15,7 @@ if config_util.key_chat_module == 'privategpt':
 from core import wsa_server
 from gui import flask_server
 from gui.window import MainWindow
-from utils import config_util
+
 from scheduler.thread_manager import MyThread
 from core import content_db
 import sys
