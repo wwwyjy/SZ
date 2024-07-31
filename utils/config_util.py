@@ -32,12 +32,7 @@ tts_module = None
 key_ali_tss_key_id = None
 key_ali_tss_key_secret = None
 key_ali_tss_app_key = None
-volcano_tts_appid = None
-volcano_tts_access_token = None
-volcano_tts_cluster = None
-volcano_tts_voice_type = None
-coze_bot_id = None
-coze_api_key = None
+
 
 def load_config():
     global config
@@ -70,12 +65,6 @@ def load_config():
     global key_ali_tss_key_id
     global key_ali_tss_key_secret
     global key_ali_tss_app_key
-    global volcano_tts_appid
-    global volcano_tts_access_token
-    global volcano_tts_cluster
-    global volcano_tts_voice_type
-    global coze_bot_id
-    global coze_api_key
 
     system_config = ConfigParser()
     system_config.read('system.conf', encoding='UTF-8')
@@ -107,12 +96,6 @@ def load_config():
     ollama_ip = system_config.get('key', 'ollama_ip')
     ollama_model = system_config.get('key', 'ollama_model')
     tts_module = system_config.get('key', 'tts_module')
-    volcano_tts_appid = system_config.get('key', 'volcano_tts_appid')
-    volcano_tts_access_token = system_config.get('key', 'volcano_tts_access_token')
-    volcano_tts_cluster = system_config.get('key', 'volcano_tts_cluster')
-    volcano_tts_voice_type = system_config.get('key', 'volcano_tts_voice_type')
-    coze_bot_id = system_config.get('key', 'coze_bot_id')
-    coze_api_key = system_config.get('key', 'coze_api_key')
     config = json.load(codecs.open('config.json', encoding='utf-8'))
 
 def save_config(config_data):

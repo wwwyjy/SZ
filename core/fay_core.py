@@ -33,8 +33,6 @@ if cfg.tts_module =='ali':
     from ai_module.ali_tss import Speech
 elif cfg.tts_module == 'gptsovits':
     from ai_module.gptsovits import Speech
-elif cfg.tts_module == 'volcano':
-    from ai_module.volcano_tts import Speech
 else:
     from ai_module.ms_tts_sdk import Speech
 from core import content_db
@@ -49,7 +47,6 @@ from ai_module import nlp_lingju
 from ai_module import nlp_xingchen
 from ai_module import nlp_langchain
 from ai_module import nlp_ollama_api
-from ai_module import nlp_coze
 
 
 import platform
@@ -65,9 +62,7 @@ modules = {
     "nlp_lingju": nlp_lingju,
     "nlp_xingchen": nlp_xingchen,
     "nlp_langchain": nlp_langchain,
-    "nlp_ollama_api": nlp_ollama_api,
-    "nlp_coze": nlp_coze
-
+    "nlp_ollama_api": nlp_ollama_api
 }
 
 
