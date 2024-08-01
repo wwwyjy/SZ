@@ -34,7 +34,7 @@ def question(cont):
         'Connection': 'keep-alive'
     }
     data = {
-        "bot_id": "7395398230516727842",
+        "bot_id": cfg.coze_bot_id,
         "user": "user",
         "query": cont,
         "stream": False,
