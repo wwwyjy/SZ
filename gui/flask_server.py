@@ -226,13 +226,14 @@ def api_get_Msg():
 def api_send_v1_chat_completions():
     data = request.json  
     last_content = ""
-    username = data.get('user', 'User')
     if 'messages' in data and data['messages']:
         last_message = data['messages'][-1]  
+        username = last_message.get('role', 'User')  
         last_content = last_message.get('content', 'No content provided')  
     else:
         last_content = 'No messages found'
-    
+        username = 'User'
+
     model = data.get('model', 'fay')
     text = fay_core.send_for_answer(last_content, username)
 
