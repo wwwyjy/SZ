@@ -229,6 +229,8 @@ def api_send_v1_chat_completions():
     if 'messages' in data and data['messages']:
         last_message = data['messages'][-1]  
         username = last_message.get('role', 'User')  
+        if username == 'user':
+            username = 'User'
         last_content = last_message.get('content', 'No content provided')  
     else:
         last_content = 'No messages found'
