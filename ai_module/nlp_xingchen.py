@@ -1,8 +1,9 @@
 import requests
 import json
 from utils import util, config_util
+from core import content_db
 
-def question(cont):
+def question(cont, uid=0):
     url = 'https://nlp.aliyuncs.com/v2/api/chat/send'
 
     headers = {
@@ -13,16 +14,34 @@ def question(cont):
         'x-fag-appcode': 'aca',
         'Authorization': f"Bearer {config_util.key_xingchen_api_key}"
     }
-
+    contentdb = content_db.new_instance()
+    if uid == 0:
+        communication_history = contentdb.get_list('all','desc', 11)
+    else:
+        communication_history = contentdb.get_list('all','desc', 11, uid)
+    #历史记录处理
+    message=[]
+    i = len(communication_history) - 1
+    
+    if len(communication_history)>1:
+        while i >= 0:
+            answer_info = dict()
+            if communication_history[i][0] == "member":
+                answer_info["role"] = "user"
+                answer_info["content"] = communication_history[i][2]
+            elif communication_history[i][0] == "fay":
+                answer_info["role"] = "assistant"
+                answer_info["content"] = communication_history[i][2]
+            message.append(answer_info)
+            i -= 1
+    else:
+         answer_info = dict()
+         answer_info["role"] = "user"
+         answer_info["content"] = cont
+         message.append(answer_info)
     data = {
         "input": {
-            "messages": [
-                {
-                    "name": "我",
-                    "role": "user",
-                    "content": cont
-                }
-            ],
+            "messages": message,
             "aca": {
                 "botProfile": {
                     "characterId": config_util.xingchen_characterid,
@@ -37,7 +56,7 @@ def question(cont):
                     "description": "你是数字人Fay。用户问你问题的时候回答之前请一步一步想清楚。你的底层AI算法技术是Fay。"
                 },
                 "context": {
-                    "useChatHistory": True,
+                    "useChatHistory": False,
                     "isRegenerate": False,
                 }
             }

@@ -53,6 +53,7 @@ new Vue({
             //     }
             // ],
             voice_list: [],
+            member_list:[],
             options: [{
                 value: '选项1',
                 label: '黄金糕'
@@ -88,7 +89,8 @@ new Vue({
                 label: '前置词'
             }],
             tts_enabled:true,
-            configEditable: true
+            configEditable: true,
+            selectedUser:'all'
 
         }
     },
@@ -101,6 +103,8 @@ new Vue({
         if(e.keyCode === 13 && e.keyCode === 18){
             this.send(1)
         }
+        },handleUserChange() {
+            this.getMsgList();
         },
         handleTabsEdit(targetName, action) {
             if (action === 'add') {
@@ -225,8 +229,13 @@ new Vue({
                 }
                 let panelReply = data.panelReply;
                 if(panelReply != undefined){
-                    _this.addMsg(panelReply)
-                    
+                    let userExists = _this.member_list.some(user => user[0] === panelReply['uid']);
+                    if (!userExists) {
+                        _this.member_list.push([panelReply['uid'], panelReply['username']]);
+                    }
+                    if (_this.selectedUser == "all" || panelReply['uid'] == _this.selectedUser ){
+                        _this.addMsg(panelReply)
+                    }
                 }
                 let is_connect = data.is_connect
                 if(is_connect != undefined){
@@ -555,7 +564,10 @@ new Vue({
             let xhr = new XMLHttpRequest()
             xhr.open("post", url)
             xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded")
-            xhr.send()
+            let send_data = {
+                "uid": _this.selectedUser,
+            };
+            xhr.send('data=' + JSON.stringify(send_data));
             let executed = false
             xhr.onreadystatechange = async function () {
                 if (!executed && xhr.status === 200) {
@@ -572,6 +584,28 @@ new Vue({
                                let height = document.querySelector('.content').scrollHeight;
                                document.querySelector(".content").scrollTop = height;
                            },1000)
+                        }
+                    } catch (e) {
+                        console.log(e);
+                    }
+                }
+            }
+        }, getMemberList(){
+            let _this = this;
+            
+            let url = "http://127.0.0.1:5000/api/get-member-list";
+            let xhr = new XMLHttpRequest()
+            xhr.open("post", url)
+            xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded")
+            xhr.send()
+            let executed = false
+            xhr.onreadystatechange = async function () {
+                if (!executed && xhr.status === 200) {
+                    try {
+                        if (xhr.responseText.length > 0) {
+                            let data = await eval('(' + xhr.responseText + ')')
+                            _this.member_list = data['list'];
+                               
                         }
                     } catch (e) {
                         console.log(e);
@@ -620,6 +654,7 @@ new Vue({
     mounted() {
         let _this = this;
         _this.getData();
+        _this.getMemberList()
         _this.getMsgList();
         _this.connectWS();
 

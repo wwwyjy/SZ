@@ -7,7 +7,7 @@ from scheduler.thread_manager import MyThread
 from utils import util, config_util, stream_util, ngrok_util
 from core.wsa_server import MyServer
 from scheduler.thread_manager import MyThread
-
+import re
 feiFei: FeiFei = None
 recorderListener: Recorder = None
 
@@ -26,7 +26,7 @@ class RecorderListener(Recorder):
 
     def on_speaking(self, text):
         if len(text) > 1:
-            interact = Interact("mic", 1, {'user': '', 'msg': text})
+            interact = Interact("mic", 1, {'user': 'User', 'msg': text})
             util.printInfo(3, "语音", '{}'.format(interact.data["msg"]), time.time())
             feiFei.on_interact(interact)
             time.sleep(2)
@@ -86,6 +86,7 @@ class DeviceInputListener(Recorder):
         self.streamCache = None
         self.thread = MyThread(target=self.run)
         self.thread.start()  #启动远程音频输入设备监听线程
+        self.username = 'User'
 
     def run(self):
         #启动ngork
@@ -99,7 +100,15 @@ class DeviceInputListener(Recorder):
                 data = b""
                 while feiFei.deviceConnect:
                     data = feiFei.deviceConnect.recv(1024)
-                    self.streamCache.write(data)
+                    if data.startswith(b"<username>"):
+                        data_str = data.decode("utf-8")
+                        match = re.search(r"<username>(.*?)</username>", data_str)
+                        if match:
+                            self.username = match.group(1)
+                        else:
+                            self.streamCache.write(data)
+                    else:
+                        self.streamCache.write(data)
                     time.sleep(0.005)
                 self.streamCache.clear()
          
@@ -111,7 +120,7 @@ class DeviceInputListener(Recorder):
         global feiFei
 
         if len(text) > 1:
-            interact = Interact("mic", 1, {'user': '', 'msg': text})
+            interact = Interact("mic", 1, {'user': self.username, 'msg': text})
             util.printInfo(3, "语音", '{}'.format(interact.data["msg"]), time.time())
             feiFei.on_interact(interact)
             time.sleep(2)
@@ -168,7 +177,7 @@ def console_listener():
             msg = text[3:len(text)]
             util.printInfo(3, "控制台", '{}: {}'.format('控制台', msg))
             feiFei.last_quest_time = time.time()
-            interact = Interact("console", 1, {'user': '', 'msg': msg})
+            interact = Interact("console", 1, {'user': 'User', 'msg': msg})
             thr = MyThread(target=feiFei.on_interact, args=[interact])
             thr.start()
             thr.join()

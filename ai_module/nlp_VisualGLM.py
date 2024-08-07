@@ -12,7 +12,7 @@ from ai_module import yolov8
 # Initialize an empty history list
 communication_history = []
 
-def question(cont):
+def question(cont, uid=0):
     if not yolov8.new_instance().get_status():
         return "请先启动“Fay Eyes”"
     content = {
