@@ -15,6 +15,7 @@ def new_instance():
     global __content_tb
     if __content_tb is None:
         __content_tb = Content_Db()
+        __content_tb.init_db()
     return __content_tb
 
 
@@ -34,7 +35,9 @@ class Content_Db:
             type        char(10),
             way        char(10),
             content           TEXT    NOT NULL,
-            createtime         Int);''')
+            createtime         Int,
+            username TEXT DEFAULT 'User',
+            uid         Int);''')
         conn.commit()
         conn.close()
        
@@ -43,11 +46,11 @@ class Content_Db:
 
     #添加对话
     @synchronized
-    def add_content(self,type,way,content):
+    def add_content(self,type,way,content,username='User',uid=0):
         conn = sqlite3.connect("fay.db")
         cur = conn.cursor()
         try:
-            cur.execute("insert into T_Msg (type,way,content,createtime) values (?,?,?,?)",(type,way,content,int(time.time())))
+            cur.execute("insert into T_Msg (type,way,content,createtime,username,uid) values (?,?,?,?,?,?)",(type,way,content,int(time.time()),username,uid))
             conn.commit()
         except:
                util.log(1, "请检查参数是否有误")
@@ -60,28 +63,22 @@ class Content_Db:
 
     #获取对话内容
     @synchronized
-    def get_list(self,way,order,limit):
+    def get_list(self,way,order,limit,uid=0):
         conn = sqlite3.connect("fay.db")
         cur = conn.cursor()
+        where_uid = ""
+        if int(uid) != 0:
+            where_uid = f" and uid = {uid} "
         if(way == 'all'):
-            cur.execute("select type,way,content,createtime,datetime(createtime, 'unixepoch', 'localtime') as timetext from T_Msg  order by id "+order+" limit ?",(limit,))
+            cur.execute("select type,way,content,createtime,datetime(createtime, 'unixepoch', 'localtime') as timetext,username from T_Msg  where 1 "+where_uid+" order by id "+order+" limit ?",(limit,))
         elif(way == 'notappended'):
-            cur.execute("select type,way,content,createtime,datetime(createtime, 'unixepoch', 'localtime') as timetext from T_Msg where way != 'appended' order by id "+order+" limit ?",(limit,))
+            cur.execute("select type,way,content,createtime,datetime(createtime, 'unixepoch', 'localtime') as timetext,username from T_Msg where way != 'appended' "+where_uid+" order by id "+order+" limit ?",(limit,))
         else:
-            cur.execute("select type,way,content,createtime,datetime(createtime, 'unixepoch', 'localtime') as timetext from T_Msg where way = ? order by id "+order+" limit ?",(way,limit,))
+            cur.execute("select type,way,content,createtime,datetime(createtime, 'unixepoch', 'localtime') as timetext,username from T_Msg where way = ? "+where_uid+" order by id "+order+" limit ?",(way,limit,))
 
         list = cur.fetchall()
         conn.close()
         return list
-
-
-
-
-
-# a = Content_Db()
-# s = a.get_list('all','desc',10)
-# print(s)
-   
 
 
 

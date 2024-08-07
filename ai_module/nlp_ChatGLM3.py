@@ -3,9 +3,12 @@ import requests
 from core import content_db
 
 
-def question(cont):
+def question(cont, uid=0):
     contentdb = content_db.new_instance()
-    list = contentdb.get_list('all','desc',11)
+    if uid == 0:
+        list = contentdb.get_list('all','desc', 11)
+    else:
+        list = contentdb.get_list('all','desc', 11, uid)
     answer_info = dict()
     chat_list = []
     i = len(list)-1

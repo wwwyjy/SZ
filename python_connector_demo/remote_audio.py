@@ -47,7 +47,9 @@ def receive_audio(client):
 
 if __name__ == "__main__":
     client = socket.socket()
-    client.connect(("192.168.1.101", 10001))
+    client.connect(("127.0.0.1", 10001))
+    client.send(b"<username>user1</username>")
+    time.sleep(1)
     pygame.mixer.init()
     thread_manager.MyThread(target=send_audio, args=(client,)).start()
     thread_manager.MyThread(target=receive_audio, args=(client,)).start()

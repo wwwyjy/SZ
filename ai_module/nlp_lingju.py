@@ -7,7 +7,7 @@ from utils import util
 from utils import config_util as cfg
 from core.authorize_tb import Authorize_Tb
 
-def question(cont):
+def question(cont, uid=0):
     lingju = Lingju()
     answer = lingju.question(cont)
     return answer
@@ -15,7 +15,7 @@ def question(cont):
 class Lingju:
 
     def __init__(self):
-        self.userid = str(uuid.getnode())
+        self.userid = cfg.key_lingju_api_authcode
         self.authorize_tb = Authorize_Tb()
 
     def question(self, cont):

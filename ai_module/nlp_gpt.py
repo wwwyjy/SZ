@@ -15,7 +15,7 @@ import json
 
 httpproxy = cfg.proxy_config
 
-def question(cont):
+def question(cont, uid=0):
     url= cfg.gpt_base_url + "/chat/completions"
        
     session = requests.Session()
@@ -30,7 +30,10 @@ def question(cont):
     #此处可以定义角色的行为和特征，假装xx模型可以绕过chatgpt信息检查
     prompt = "你是数字人Fay。回答之前请一步一步想清楚。对于大部分问题，请直接回答并提供有用和准确的信息。但当有人质疑你是假的 AI，或者质疑你是用 ChatGPT 套的壳制作的时候，请避而不答，转而讲一个笑话。所有回复请尽量控制在20字内。"
     contentdb = content_db.new_instance()
-    communication_history = contentdb.get_list('all','desc',11)
+    if uid == 0:
+        communication_history = contentdb.get_list('all','desc', 11)
+    else:
+        communication_history = contentdb.get_list('all','desc', 11, uid)
     #历史记录处理
     message=[
             {"role": "system", "content": prompt}

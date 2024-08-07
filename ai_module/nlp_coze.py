@@ -4,9 +4,12 @@ from utils import util
 from utils import config_util as cfg
 from core import content_db
 
-def question(cont):
+def question(cont, uid=0):
     contentdb = content_db.new_instance()
-    communication_history = contentdb.get_list('all','desc',11)
+    if uid == 0:
+        communication_history = contentdb.get_list('all','desc', 11)
+    else:
+        communication_history = contentdb.get_list('all','desc', 11, uid)
     message = []
     i = len(communication_history) - 1
 

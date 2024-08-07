@@ -50,6 +50,7 @@ from ai_module import nlp_xingchen
 from ai_module import nlp_langchain
 from ai_module import nlp_ollama_api
 from ai_module import nlp_coze
+from core import member_db
 
 
 import platform
@@ -71,7 +72,7 @@ modules = {
 }
 
 
-def determine_nlp_strategy(msg):
+def determine_nlp_strategy(msg, username='User'):
     text = ''
     textlist = []
     try:
@@ -86,7 +87,8 @@ def determine_nlp_strategy(msg):
             textlist = selected_module.question(msg)
             text = textlist[0]['text'] 
         else:
-            text = selected_module.question(msg)  
+            uid = member_db.new_instance().find_user(username)
+            text = selected_module.question(msg, uid)  
         util.log(1, '自然语言处理完成. 耗时: {} ms'.format(math.floor((time.time() - tm) * 1000)))
         if text == '哎呀，你这么说我也不懂，详细点呗' or text == '':
             util.log(1, '[!] 自然语言无语了！')
@@ -105,10 +107,16 @@ def determine_nlp_strategy(msg):
 
 
 #文本消息处理
-def send_for_answer(msg):
+def send_for_answer(msg, username='User'):
+
+         #检查用户
+        if member_db.new_instance().is_username_exist(username)  == "notexists":
+           member_db.new_instance().add_user(username)
+        uid = member_db.new_instance().find_user(username)
         contentdb = content_db.new_instance()
-        contentdb.add_content('member','send',msg)
-        wsa_server.get_web_instance().add_cmd({"panelReply": {"type":"member","content":msg}})
+        contentdb.add_content('member','send', msg, username, uid)
+        
+        wsa_server.get_web_instance().add_cmd({"panelReply": {"type":"member", "content":msg, "username":username, "uid":uid}})
         textlist = []
         text = None
         text = qa_service.question('qa',msg)
@@ -121,15 +129,15 @@ def send_for_answer(msg):
 
         # 全局问答
         if text is None:
-            text,textlist = determine_nlp_strategy(msg)
+            text,textlist = determine_nlp_strategy(msg, username)
                 
-        contentdb.add_content('fay','send',text)
-        wsa_server.get_web_instance().add_cmd({"panelReply": {"type":"fay","content":text}})
+        contentdb.add_content('fay','send', text, username, uid)
+        wsa_server.get_web_instance().add_cmd({"panelReply": {"type":"fay","content":text, "username":username, "uid":uid}})
         if len(textlist) > 1:
             i = 1
             while i < len(textlist):
-                  contentdb.add_content('fay','send',textlist[i]['text'])
-                  wsa_server.get_web_instance().add_cmd({"panelReply": {"type":"fay","content":textlist[i]['text']}})
+                  contentdb.add_content('fay','send', textlist[i]['text'], username, uid)
+                  wsa_server.get_web_instance().add_cmd({"panelReply": {"type":"fay","content":textlist[i]['text'], "username":username, "uid":uid}})
                   i+= 1
         fay_booter.feiFei.a_msg = text
         MyThread(target=fay_booter.feiFei.say, args=['interact']).start()         
@@ -276,10 +284,14 @@ class FeiFei:
                                 content = {'Topic': 'Unreal', 'Data': {'Key': 'log', 'Value': "静音指令正在执行，不互动"}}
                                 wsa_server.get_instance().add_cmd(content)
                             continue
-
+                        username = interact.data["user"]
+                        #检查用户
+                        if member_db.new_instance().is_username_exist(username)  == "notexists":
+                            member_db.new_instance().add_user(username)
+                        uid = member_db.new_instance().find_user(username)
                         contentdb = content_db.new_instance()  
-                        contentdb.add_content('member','speak',self.q_msg)
-                        wsa_server.get_web_instance().add_cmd({"panelReply": {"type":"member","content":self.q_msg}})
+                        contentdb.add_content('member','speak',self.q_msg, username, uid)
+                        wsa_server.get_web_instance().add_cmd({"panelReply": {"type":"member","content":self.q_msg, "username":username, "uid":uid}})
                      
 
                         text = ''
@@ -290,18 +302,18 @@ class FeiFei:
                             if not cfg.config["interact"]["playSound"]: # 非展板播放
                                 content = {'Topic': 'Unreal', 'Data': {'Key': 'log', 'Value': "思考中..."}}
                                 wsa_server.get_instance().add_cmd(content)
-                            text,textlist = determine_nlp_strategy(self.q_msg)
+                            text,textlist = determine_nlp_strategy(self.q_msg, username)
                         elif answer != 'NO_ANSWER': #语音内容没有命中指令,回复q&a内容
                             text = answer
                         self.a_msg = text
                         self.write_to_file("./logs", "answer_result.txt", text)
-                        contentdb.add_content('fay','speak',self.a_msg)
-                        wsa_server.get_web_instance().add_cmd({"panelReply": {"type":"fay","content":self.a_msg}})
+                        contentdb.add_content('fay','speak',self.a_msg, username, uid)
+                        wsa_server.get_web_instance().add_cmd({"panelReply": {"type":"fay","content":self.a_msg, "username":username, "uid":uid}})
                         if len(textlist) > 1:
                             i = 1
                             while i < len(textlist):
-                                contentdb.add_content('fay','speak',textlist[i]['text'])
-                                wsa_server.get_web_instance().add_cmd({"panelReply": {"type":"fay","content":textlist[i]['text']}})
+                                contentdb.add_content('fay','speak',textlist[i]['text'], username, uid)
+                                wsa_server.get_web_instance().add_cmd({"panelReply": {"type":"fay","content":textlist[i]['text'], "username":username, "uid":uid}})
                                 i+= 1
                     wsa_server.get_web_instance().add_cmd({"panelMsg": self.a_msg})
                     if not cfg.config["interact"]["playSound"]: # 非展板播放
@@ -548,7 +560,7 @@ class FeiFei:
                 MyThread(target=self.__device_socket_keep_alive).start() # 开启心跳包检测
                 util.log(1,"远程音频输入输出设备连接上：{}".format(addr))
                 wsa_server.get_web_instance().add_cmd({"remote_audio_connect": True}) 
-                while self.deviceConnect: #只允许一个设备连接
+                while self.deviceCzonnect: #只允许一个设备连接
                     time.sleep(1)
         except Exception as err:
             pass

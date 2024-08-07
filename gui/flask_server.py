@@ -16,6 +16,7 @@ from core import wsa_server
 from core import fay_core
 from core import content_db
 from ai_module import yolov8
+from core import member_db
 
 
 __app = Flask(__name__)
@@ -205,8 +206,13 @@ def api_send():
 
 @__app.route('/api/get-msg', methods=['post'])
 def api_get_Msg():
+    data = request.form.get('data')
+    data = json.loads(data)
     contentdb = content_db.new_instance()
-    list = contentdb.get_list('all','desc',1000)
+    if data["uid"] == "all":
+        list = contentdb.get_list('all','desc',1000)
+    else:
+        list = contentdb.get_list('all','desc',1000, data["uid"])
     relist = []
     i = len(list)-1
     while i >= 0:
@@ -220,6 +226,7 @@ def api_get_Msg():
 def api_send_v1_chat_completions():
     data = request.json  
     last_content = ""
+    username = data.get('user', 'User')
     if 'messages' in data and data['messages']:
         last_message = data['messages'][-1]  
         last_content = last_message.get('content', 'No content provided')  
@@ -227,12 +234,19 @@ def api_send_v1_chat_completions():
         last_content = 'No messages found'
     
     model = data.get('model', 'fay')
-    text = fay_core.send_for_answer(last_content)
+    text = fay_core.send_for_answer(last_content, username)
 
     if model == 'fay-streaming':
         return stream_response(text)
     else:
         return non_streaming_response(last_content, text)
+
+@__app.route('/api/get-member-list', methods=['post'])
+def api_get_Member_list():
+    memberdb = member_db.new_instance()
+    list = memberdb.get_all_users()
+    return json.dumps({'list': list})
+
 
 def stream_response(text):
     def generate():
