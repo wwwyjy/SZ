@@ -38,6 +38,7 @@ volcano_tts_cluster = None
 volcano_tts_voice_type = None
 coze_bot_id = None
 coze_api_key = None
+start_mode = None
 
 def load_config():
     global config
@@ -76,6 +77,7 @@ def load_config():
     global volcano_tts_voice_type
     global coze_bot_id
     global coze_api_key
+    global start_mode
 
     system_config = ConfigParser()
     system_config.read('system.conf', encoding='UTF-8')
@@ -113,6 +115,7 @@ def load_config():
     volcano_tts_voice_type = system_config.get('key', 'volcano_tts_voice_type')
     coze_bot_id = system_config.get('key', 'coze_bot_id')
     coze_api_key = system_config.get('key', 'coze_api_key')
+    start_mode = system_config.get('key', 'start_mode')
     config = json.load(codecs.open('config.json', encoding='utf-8'))
 
 def save_config(config_data):

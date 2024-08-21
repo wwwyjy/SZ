@@ -560,7 +560,7 @@ class FeiFei:
                 MyThread(target=self.__device_socket_keep_alive).start() # 开启心跳包检测
                 util.log(1,"远程音频输入输出设备连接上：{}".format(addr))
                 wsa_server.get_web_instance().add_cmd({"remote_audio_connect": True}) 
-                while self.deviceCzonnect: #只允许一个设备连接
+                while self.deviceConnect: #只允许一个设备连接
                     time.sleep(1)
         except Exception as err:
             pass

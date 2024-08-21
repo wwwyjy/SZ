@@ -28,14 +28,17 @@ def __get_template():
 
 
 def __get_device_list():
-    audio = pyaudio.PyAudio()
-    device_list = []
-    for i in range(audio.get_device_count()):
-        devInfo = audio.get_device_info_by_index(i)
-        if devInfo['hostApi'] == 0:
-            device_list.append(devInfo["name"])
-    
-    return list(set(device_list))
+    if config_util.start_mode == 'common':
+        audio = pyaudio.PyAudio()
+        device_list = []
+        for i in range(audio.get_device_count()):
+            devInfo = audio.get_device_info_by_index(i)
+            if devInfo['hostApi'] == 0:
+                device_list.append(devInfo["name"])
+        
+        return list(set(device_list))
+    else:
+        return []
 
 
 @__app.route('/api/submit', methods=['post'])
@@ -177,6 +180,8 @@ def api_get_data():
             "voiceList": send_voice_list
         })
     wsa_server.get_web_instance().add_cmd({"deviceList": __get_device_list()})
+    if fay_booter.booter_running:
+        wsa_server.get_web_instance().add_cmd({"liveState": 1})
     return json.dumps({'config': config_util.config})
 
 
@@ -216,7 +221,7 @@ def api_get_Msg():
     relist = []
     i = len(list)-1
     while i >= 0:
-        relist.append(dict(type=list[i][0], way=list[i][1], content=list[i][2], createtime=list[i][3], timetext=list[i][4]))
+        relist.append(dict(type=list[i][0], way=list[i][1], content=list[i][2], createtime=list[i][3], timetext=list[i][4], username=list[i][5]))
         i -= 1
 
     return json.dumps({'list': relist})

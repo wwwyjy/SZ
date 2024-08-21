@@ -26,7 +26,7 @@
 https://github.com/TheRamU/Fay/blob/main/WebSocket.md)
 
 
-## **安装说明**
+## **源码启动**
 
 
 ### **环境** 
@@ -39,8 +39,8 @@ https://github.com/TheRamU/Fay/blob/main/WebSocket.md)
 pip install -r requirements.txt
 ```
 
-### **配置应用**
-+ 配置 `./system.conf` 文件
+### **配置**
++ 修改 `./system.conf` 文件
 
 ### **启动**
 启动Fay控制器
@@ -48,7 +48,19 @@ pip install -r requirements.txt
 python main.py
 ```
 
-
+## **docker 启动**
+1. 下载助理版
+https://github.com/xszyou/Fay/tree/fay-assistant-edition
+2.  修改 `./system.conf` 文件
+   
+build （修改配置文件后，需要重新build）
+```shell
+docker build  -t fay ./fay-assistant-edition
+```
+run
+```shell
+docker run -it --rm -p 5000:5000 -p 10001:10001 -p 10002:10002 -p 10003:10003 fay
+```
 ### **启动数字人（非必须）**
 启动数字人[xszyou/fay-ue5: 可对接fay数字人的ue5工程 (github.com)](https://github.com/xszyou/fay-ue5)
 

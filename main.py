@@ -1,13 +1,14 @@
 import os
 import sys
 from io import BytesIO
-
-from PyQt5 import QtGui
-from PyQt5.QtWidgets import QApplication
-
-from ai_module import ali_nls
 from utils import config_util
 config_util.load_config()
+if config_util.start_mode == 'common':
+    from PyQt5 import QtGui
+    from PyQt5.QtWidgets import QApplication
+
+from ai_module import ali_nls
+
 if config_util.key_chat_module == 'langchain':
     from ai_module import nlp_langchain
 if config_util.key_chat_module == 'privategpt':    
@@ -68,11 +69,17 @@ if __name__ == '__main__':
         nlp_langchain.save_all()
     if config_util.key_chat_module == 'privategpt':
         nlp_privategpt.save_all()
-    app = QApplication(sys.argv)
-    app.setWindowIcon(QtGui.QIcon('icon.png'))
-    win = MainWindow()
-    time.sleep(1)
-    win.show()
-    app.exit(app.exec_())
+    if config_util.start_mode == 'common':    
+        app = QApplication(sys.argv)
+        app.setWindowIcon(QtGui.QIcon('icon.png'))
+        win = MainWindow()
+        time.sleep(1)
+        win.show()
+        app.exit(app.exec_())
+    else:
+        while True:
+            time.sleep(1) 
+
+    
 
     
