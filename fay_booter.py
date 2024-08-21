@@ -12,6 +12,7 @@ feiFei: FeiFei = None
 recorderListener: Recorder = None
 
 __running = False
+booter_running = False
 
 #录制麦克风音频输入并传给aliyun
 class RecorderListener(Recorder):
@@ -191,7 +192,9 @@ def stop():
     global recorderListener
     global __running
     global deviceInputListener
+    global booter_running
 
+    booter_running = False
     util.log(1, '正在关闭服务...')
     __running = False
     if recorderListener is not None:
@@ -210,10 +213,10 @@ def start():
     global recorderListener
     global __running
     global deviceInputListener
-
+    global booter_running
     util.log(1, '开启服务...')
     __running = True
-
+    booter_running = True
     util.log(1, '读取配置...')
     config_util.load_config()
 
