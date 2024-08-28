@@ -17,10 +17,26 @@ from core import fay_core
 from core import content_db
 from ai_module import yolov8
 from core import member_db
+from flask_httpauth import HTTPBasicAuth
 
 
 __app = Flask(__name__)
+auth = HTTPBasicAuth()
 CORS(__app, supports_credentials=True)
+
+def load_users():
+    with open('users.json') as f:
+        users = json.load(f)
+    return users
+
+users = load_users()
+
+@auth.verify_password
+def verify_password(username, password):
+    if not users or config_util.start_mode == 'common':
+        return True
+    if username in users and users[username] == password:
+        return username
 
 
 def __get_template():
@@ -206,7 +222,7 @@ def api_stop_live():
 def api_send():
     data = request.values.get('data')
     info = json.loads(data)
-    fay_core.send_for_answer(info['msg'])
+    fay_core.send_for_answer(info['msg'], info['username'])
     return '{"result":"successful"}'
 
 @__app.route('/api/get-msg', methods=['post'])
@@ -311,11 +327,13 @@ def text_chunks(text, chunk_size=20):
         yield text[i:i + chunk_size]
 
 @__app.route('/', methods=['get'])
+@auth.login_required
 def home_get():
     return __get_template()
 
 
 @__app.route('/', methods=['post'])
+@auth.login_required
 def home_post():
     return __get_template()
 

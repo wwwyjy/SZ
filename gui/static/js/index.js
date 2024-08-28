@@ -90,8 +90,10 @@ new Vue({
             }],
             tts_enabled:true,
             configEditable: true,
-            selectedUser:'all'
-
+            selectedUser:'all',
+            to_human: false,
+            sendUser:'User',
+            othersUser:""
         }
     },
     created() {
@@ -181,8 +183,10 @@ new Vue({
                 if (liveState !== undefined) {
                     _this.live_state = liveState
                     if (liveState === 1) {
+                        _this.configEditable = false;
                         _this.sendSuccessMsg("已开启！")
                     } else if (liveState === 0) {
+                        _this.configEditable = true;
                         _this.sendSuccessMsg("已关闭！")
                     }
                 }
@@ -526,10 +530,16 @@ new Vue({
                 alert('请输入内容');
                 return;
             }
+            if (_this.sendUser === 'others' && !_this.othersUser) {
+                alert('请输入自定义用户名');
+                return;
+            }
             if (this.live_state != 1){
                 alert('请先开启服务');
                 return;
             }
+            let usernameToSend = _this.sendUser === 'others' ? _this.othersUser : _this.sendUser;
+
             this.timer = setTimeout(()=>{   //设置延迟执行
                 //滚动条置底
                let height = document.querySelector('.content').scrollHeight;
@@ -538,7 +548,8 @@ new Vue({
             _this.send_msg = ''
             let url = "http://127.0.0.1:5000/api/send";
             let send_data = {
-                "msg": text
+                "msg": text,
+                "username": usernameToSend
             };
       
             let xhr = new XMLHttpRequest()

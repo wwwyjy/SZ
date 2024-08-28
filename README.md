@@ -52,7 +52,8 @@ python main.py
 1. 下载助理版
 https://github.com/xszyou/Fay/tree/fay-assistant-edition
 2.  修改 `./system.conf` 文件
-   
+3. 删除requirements.txt下pyqt5~=5.15.6
+
 build （修改配置文件后，需要重新build）
 ```shell
 docker build  -t fay ./fay-assistant-edition

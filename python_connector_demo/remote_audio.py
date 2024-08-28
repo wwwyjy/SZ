@@ -4,6 +4,7 @@ import time
 import pygame
 
 import thread_manager
+import wave
 
 def get_stream():
         paudio = pyaudio.PyAudio()
@@ -35,10 +36,13 @@ def receive_audio(client):
                     break
             print("receive audio end:{}".format(len(filedata)), end="")
 
-            filename = "sample/recv_{}.mp3".format(time.time())
-            with open(filename, "wb") as f:
-                f.write(filedata)
-                f.close()
+            filename = "sample/recv_{}.wav".format(time.time())
+            with wave.open(filename, 'wb') as wf:
+                        wf.setnchannels(1)
+                        wf.setsampwidth(2)
+                        wf.setframerate(16000)
+                        wf.writeframes(filedata)
+
             pygame.mixer.music.load(filename)
             pygame.mixer.music.play()
 
