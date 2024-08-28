@@ -228,7 +228,14 @@
                             <div class="input-area">
                                 <textarea v-model="send_msg" name="text" id="textarea" placeholder="发送些内容给Fay..."></textarea>
                                 <div class="button-area">
-                                    <button id="send-btn" @click="send()">Fay</button>                                    
+                                    <el-select style="width: 125px;"  v-model="sendUser" placeholder="对话用户选择" >
+                                        <el-option label="默认用户" value="User"></el-option>
+                                        <el-option v-for="user in member_list" :key="user[0]" :label="user[1]" :value="user[0]" v-if="user[1]!='User'"></el-option>
+                                        <el-option label="自定义" value="others"></el-option>
+                                    </el-select>
+                                    <el-input v-show="sendUser === 'others'" v-model="othersUser" placeholder="输入用户名" style="width: 120px; margin-left: 20px;"></el-input>
+
+                                    <button style="margin-left: 20px;" id="send-btn" @click="send()">Fay</button>                                    
                                 </div>
                             </div>
                         </div>
