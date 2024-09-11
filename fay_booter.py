@@ -1,4 +1,6 @@
+#核心启动模块
 import time
+import re
 import pyaudio
 from core.interact import Interact
 from core.recorder import Recorder
@@ -7,12 +9,13 @@ from scheduler.thread_manager import MyThread
 from utils import util, config_util, stream_util, ngrok_util
 from core.wsa_server import MyServer
 from scheduler.thread_manager import MyThread
-import re
 feiFei: FeiFei = None
 recorderListener: Recorder = None
-
 __running = False
-booter_running = False
+
+#启动状态
+def is_running():
+    return __running
 
 #录制麦克风音频输入并传给aliyun
 class RecorderListener(Recorder):
@@ -148,7 +151,7 @@ class DeviceInputListener(Recorder):
         
 
 
-
+#控制台输入监听
 def console_listener():
     global feiFei
     while __running:
@@ -192,9 +195,7 @@ def stop():
     global recorderListener
     global __running
     global deviceInputListener
-    global booter_running
 
-    booter_running = False
     util.log(1, '正在关闭服务...')
     __running = False
     if recorderListener is not None:
@@ -207,25 +208,27 @@ def stop():
     feiFei.stop()
     util.log(1, '服务已关闭！')
 
-
+#开启服务
 def start():
     global feiFei
     global recorderListener
     global __running
     global deviceInputListener
-    global booter_running
     util.log(1, '开启服务...')
     __running = True
-    booter_running = True
+
+    #读取配置
     util.log(1, '读取配置...')
     config_util.load_config()
 
+    #开启核心服务
     util.log(1, '开启核心服务...')
     feiFei = FeiFei()
     feiFei.start()
 
     record = config_util.config['source']['record']
 
+    #开启录音服务
     if record['enabled']:
         util.log(1, '开启录音服务...')
         recorderListener = RecorderListener(record['device'], feiFei)  # 监听麦克风
@@ -236,6 +239,7 @@ def start():
     deviceInputListener = DeviceInputListener(feiFei)  # 设备音频输入输出麦克风
     deviceInputListener.start()
 
+    #监听控制台
     util.log(1, '注册命令...')
     MyThread(target=console_listener).start()  # 监听控制台
 

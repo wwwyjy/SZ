@@ -25,7 +25,7 @@ auth = HTTPBasicAuth()
 CORS(__app, supports_credentials=True)
 
 def load_users():
-    with open('users.json') as f:
+    with open('verifier.json') as f:
         users = json.load(f)
     return users
 
@@ -196,7 +196,7 @@ def api_get_data():
             "voiceList": send_voice_list
         })
     wsa_server.get_web_instance().add_cmd({"deviceList": __get_device_list()})
-    if fay_booter.booter_running:
+    if fay_booter.is_running():
         wsa_server.get_web_instance().add_cmd({"liveState": 1})
     return json.dumps({'config': config_util.config})
 
@@ -222,7 +222,7 @@ def api_stop_live():
 def api_send():
     data = request.values.get('data')
     info = json.loads(data)
-    fay_core.send_for_answer(info['msg'], info['username'])
+    fay_core.process_text_message(info['msg'], info['username'])
     return '{"result":"successful"}'
 
 @__app.route('/api/get-msg', methods=['post'])
@@ -258,7 +258,7 @@ def api_send_v1_chat_completions():
         username = 'User'
 
     model = data.get('model', 'fay')
-    text = fay_core.send_for_answer(last_content, username)
+    text = fay_core.process_text_message(last_content, username)
 
     if model == 'fay-streaming':
         return stream_response(text)
