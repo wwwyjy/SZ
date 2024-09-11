@@ -2,7 +2,7 @@
 
 <div align="center">
     <br>
-    <img src="images/icon.png" alt="Fay">
+    <img src="readme/icon.png" alt="Fay">
     <h1>FAY</h1>
 	<h3>Fay数字人框架 助理版 </h3>
 </div>
@@ -21,7 +21,7 @@
 
 
 
-![](images/controller.png)
+![](readme/controller.png)
 
 https://github.com/TheRamU/Fay/blob/main/WebSocket.md)
 
@@ -94,4 +94,4 @@ docker run -it --rm -p 5000:5000 -p 10001:10001 -p 10002:10002 -p 10003:10003 fa
 
 **交流群及资料教程**关注公众号 **fay数字人**（**请先star本仓库**）
 
-![](images/gzh.jpg)
+![](readme/gzh.jpg)

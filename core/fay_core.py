@@ -1,48 +1,24 @@
-import difflib
+#数字人核心模块
 import math
 import os
-import random
 import time
-import wave
 import socket
-import json 
-
-import eyed3
-from openpyxl import load_workbook
-import logging
-
+import wave
+import pygame
 
 # 适应模型使用
 import numpy as np
-# import tensorflow as tf
 import fay_booter
 from ai_module import baidu_emotion
-
-
 from core import wsa_server, tts_voice, song_player
 from core.interact import Interact
 from core.tts_voice import EnumVoice
 from scheduler.thread_manager import MyThread
 from utils import util, storer, config_util
 from core import qa_service
-
-import pygame
 from utils import config_util as cfg
-cfg.load_config()
-if cfg.tts_module =='ali':
-    from ai_module.ali_tss import Speech
-elif cfg.tts_module == 'gptsovits':
-    from ai_module.gptsovits import Speech
-elif cfg.tts_module == 'gptsovits_v3':
-    from ai_module.gptsovits_v3 import Speech    
-elif cfg.tts_module == 'volcano':
-    from ai_module.volcano_tts import Speech
-else:
-    from ai_module.ms_tts_sdk import Speech
 from core import content_db
-from datetime import datetime
 from ai_module import nlp_cemotion
-
 from ai_module import nlp_rasa
 from ai_module import nlp_gpt
 from ai_module import yolov8
@@ -54,7 +30,20 @@ from ai_module import nlp_ollama_api
 from ai_module import nlp_coze
 from core import member_db
 
+#加载配置
+cfg.load_config()
+if cfg.tts_module =='ali':
+    from ai_module.ali_tss import Speech
+elif cfg.tts_module == 'gptsovits':
+    from ai_module.gptsovits import Speech
+elif cfg.tts_module == 'gptsovits_v3':
+    from ai_module.gptsovits_v3 import Speech    
+elif cfg.tts_module == 'volcano':
+    from ai_module.volcano_tts import Speech
+else:
+    from ai_module.ms_tts_sdk import Speech
 
+#windows运行推送唇形数据
 import platform
 if platform.system() == "Windows":
     import sys
@@ -73,8 +62,8 @@ modules = {
 
 }
 
-
-def determine_nlp_strategy(msg, username='User'):
+#大语言模型回复
+def handle_chat_message(msg, username='User'):
     text = ''
     textlist = []
     try:
@@ -102,37 +91,38 @@ def determine_nlp_strategy(msg, username='User'):
 
     return text,textlist
     
-
-
-
-
-
-
 #文本消息处理
-def send_for_answer(msg, username='User'):
+def process_text_message(msg, username='User'):
 
-         #检查用户
+         #记录用户名
         if member_db.new_instance().is_username_exist(username)  == "notexists":
            member_db.new_instance().add_user(username)
+
+        #记录用户提问
         uid = member_db.new_instance().find_user(username)
         contentdb = content_db.new_instance()
         contentdb.add_content('member','send', msg, username, uid)
-        
+
+        #用户提问同步panel
         wsa_server.get_web_instance().add_cmd({"panelReply": {"type":"member", "content":msg, "username":username, "uid":uid}})
+
         textlist = []
         text = None
+
+        #qa问答回复
         text = qa_service.question('qa',msg)
 
-        # 人设问答
+        # 人设问答回复
         if text is not None:
             keyword = qa_service.question('Persona',msg)
             if keyword is not None:
                 text = config_util.config["attribute"][keyword]
 
-        # 全局问答
+        # 大语言模型回复
         if text is None:
-            text,textlist = determine_nlp_strategy(msg, username)
-                
+            text,textlist = handle_chat_message(msg, username)
+
+        #记录回答        
         contentdb.add_content('fay','send', text, username, uid)
         wsa_server.get_web_instance().add_cmd({"panelReply": {"type":"fay","content":text, "username":username, "uid":uid}})
         if len(textlist) > 1:
@@ -141,8 +131,11 @@ def send_for_answer(msg, username='User'):
                   contentdb.add_content('fay','send', textlist[i]['text'], username, uid)
                   wsa_server.get_web_instance().add_cmd({"panelReply": {"type":"fay","content":textlist[i]['text'], "username":username, "uid":uid}})
                   i+= 1
+
+        #语音输出        
         fay_booter.feiFei.a_msg = text
-        MyThread(target=fay_booter.feiFei.say, args=['interact']).start()         
+        MyThread(target=fay_booter.feiFei.say, args=['interact']).start()    
+             
         return text
 
 
@@ -178,68 +171,11 @@ class FeiFei:
         self.sp.connect()  # 预连接
         self.last_quest_time = time.time()
         self.playing = False
-        self.muting = False
         self.cemotion = None
         self.stop_say = False
 
-
-    def __play_song(self):
-        self.playing = True
-        song_player.play()
-        self.playing = False
-        wsa_server.get_web_instance().add_cmd({"panelMsg": ""})
-        if not cfg.config["interact"]["playSound"]: # 非展板播放
-            content = {'Topic': 'Unreal', 'Data': {'Key': 'log', 'Value': ""}}
-            wsa_server.get_instance().add_cmd(content)
-
-    #检查是否命中指令或q&a
+    #语音消息处理检查是否命中q&a
     def __get_answer(self, interleaver, text):
-        if interleaver == "mic":
-            #指令
-            keyword = qa_service.question('command',text)
-            if keyword is not None:
-                if keyword == "playSong":
-                    MyThread(target=self.__play_song).start()
-                    wsa_server.get_web_instance().add_cmd({"panelMsg": ""})
-                    if not cfg.config["interact"]["playSound"]: # 非展板播放
-                        content = {'Topic': 'Unreal', 'Data': {'Key': 'log', 'Value': ""}}
-                        wsa_server.get_instance().add_cmd(content)
-                elif keyword == "stop":
-                    fay_booter.stop()
-                    wsa_server.get_web_instance().add_cmd({"panelMsg": ""})
-                    if not cfg.config["interact"]["playSound"]: # 非展板播放
-                        content = {'Topic': 'Unreal', 'Data': {'Key': 'log', 'Value': ""}}
-                        wsa_server.get_instance().add_cmd(content)
-                    wsa_server.get_web_instance().add_cmd({"liveState": 0})
-                elif keyword == "mute":
-                    self.muting = True
-                    self.speaking = True
-                    self.a_msg = "好的"
-                    MyThread(target=self.say, args=['interact']).start()
-                    time.sleep(0.5)
-                    wsa_server.get_web_instance().add_cmd({"panelMsg": ""})
-                    if not cfg.config["interact"]["playSound"]: # 非展板播放
-                        content = {'Topic': 'Unreal', 'Data': {'Key': 'log', 'Value': ""}}
-                        wsa_server.get_instance().add_cmd(content)
-                elif keyword == "unmute":
-                    self.muting = False
-                    return None
-                elif keyword == "changeVoice":
-                    voice = tts_voice.get_voice_of(config_util.config["attribute"]["voice"])
-                    for v in tts_voice.get_voice_list():
-                        if v != voice:
-                            config_util.config["attribute"]["voice"] = v.name
-                            break
-                    config_util.save_config(config_util.config)
-                    wsa_server.get_web_instance().add_cmd({"panelMsg": ""})
-                    if not cfg.config["interact"]["playSound"]: # 非展板播放
-                        content = {'Topic': 'Unreal', 'Data': {'Key': 'log', 'Value': ""}}
-                        wsa_server.get_instance().add_cmd(content)
-                return "NO_ANSWER"
-                      
-        if text == '唤醒':
-            return '您好，我是Fay智能助理，有什么可以帮您？'
-        
         answer = None
         # 全局问答
         answer = qa_service.question('qa',text)
@@ -251,10 +187,10 @@ class FeiFei:
         if keyword is not None:
             return config_util.config["attribute"][keyword]
        
-
-    def __auto_speak(self):
+    #语音消息处理
+    def __process_speak_message(self):
         while self.__running:
-            time.sleep(0.8)
+            time.sleep(0.1)
             if self.speaking or self.sleep:
                 continue
 
@@ -263,12 +199,16 @@ class FeiFei:
                     interact: Interact = self.interactive.pop()
                     index = interact.interact_type
                     if index == 1:
+                        #记录用户问题
                         self.q_msg = interact.data["msg"]
                         self.write_to_file("./logs", "asr_result.txt",  self.q_msg)
-                        if not config_util.config["interact"]["playSound"]: # 非展板播放
+
+                        #同步用户问题到数字人
+                        if not config_util.config["interact"]["playSound"]: # 非展板播放（历史原因，连接数字人时为非展板播放）
                             content = {'Topic': 'Unreal', 'Data': {'Key': 'question', 'Value': self.q_msg}}
                             wsa_server.get_instance().add_cmd(content)
-                        #fay eyes
+
+                        #fay eyes启动时看不到人不互动
                         fay_eyes = yolov8.new_instance()            
                         if fay_eyes.get_status():#YOLO正在运行
                             person_count, stand_count, sit_count = fay_eyes.get_counts()
@@ -278,24 +218,21 @@ class FeiFei:
                                     content = {'Topic': 'Unreal', 'Data': {'Key': 'log', 'Value': "看不到人，不互动"}}
                                     wsa_server.get_instance().add_cmd(content)
                                  continue
+                            
+                        #确定是否命中q&a
+                        answer = self.__get_answer(interact.interleaver, self.q_msg)
 
-                        answer = self.__get_answer(interact.interleaver, self.q_msg)#确定是否命中指令或q&a
-                        if(self.muting): #静音指令正在执行
-                            wsa_server.get_web_instance().add_cmd({"panelMsg": "静音指令正在执行，不互动"})
-                            if not cfg.config["interact"]["playSound"]: # 非展板播放
-                                content = {'Topic': 'Unreal', 'Data': {'Key': 'log', 'Value': "静音指令正在执行，不互动"}}
-                                wsa_server.get_instance().add_cmd(content)
-                            continue
+                        #记录用户
                         username = interact.data["user"]
-                        #检查用户
                         if member_db.new_instance().is_username_exist(username)  == "notexists":
                             member_db.new_instance().add_user(username)
                         uid = member_db.new_instance().find_user(username)
-                        contentdb = content_db.new_instance()  
-                        contentdb.add_content('member','speak',self.q_msg, username, uid)
+
+                        #记录用户问题
+                        content_db.new_instance().add_content('member','speak',self.q_msg, username, uid)
                         wsa_server.get_web_instance().add_cmd({"panelReply": {"type":"member","content":self.q_msg, "username":username, "uid":uid}})
                      
-
+                        #大语言模型回复    
                         text = ''
                         textlist = []
                         self.speaking = True
@@ -304,19 +241,21 @@ class FeiFei:
                             if not cfg.config["interact"]["playSound"]: # 非展板播放
                                 content = {'Topic': 'Unreal', 'Data': {'Key': 'log', 'Value': "思考中..."}}
                                 wsa_server.get_instance().add_cmd(content)
-                            text,textlist = determine_nlp_strategy(self.q_msg, username)
-                        elif answer != 'NO_ANSWER': #语音内容没有命中指令,回复q&a内容
-                            text = answer
+                            text,textlist = handle_chat_message(self.q_msg, username)
+
+                        #记录回复    
                         self.a_msg = text
                         self.write_to_file("./logs", "answer_result.txt", text)
-                        contentdb.add_content('fay','speak',self.a_msg, username, uid)
+                        content_db.new_instance().add_content('fay','speak',self.a_msg, username, uid)
                         wsa_server.get_web_instance().add_cmd({"panelReply": {"type":"fay","content":self.a_msg, "username":username, "uid":uid}})
                         if len(textlist) > 1:
                             i = 1
                             while i < len(textlist):
-                                contentdb.add_content('fay','speak',textlist[i]['text'], username, uid)
+                                content_db.new_instance().add_content('fay','speak',textlist[i]['text'], username, uid)
                                 wsa_server.get_web_instance().add_cmd({"panelReply": {"type":"fay","content":textlist[i]['text'], "username":username, "uid":uid}})
                                 i+= 1
+
+                    #同步回复到数字人            
                     wsa_server.get_web_instance().add_cmd({"panelMsg": self.a_msg})
                     if not cfg.config["interact"]["playSound"]: # 非展板播放
                         content = {'Topic': 'Unreal', 'Data': {'Key': 'log', 'Value': self.a_msg}}
@@ -328,6 +267,7 @@ class FeiFei:
             except BaseException as e:
                 print(e)
 
+    #记录问答到log
     def write_to_file(self, path, filename, content):
         if not os.path.exists(path):
             os.makedirs(path)
@@ -337,24 +277,10 @@ class FeiFei:
             file.flush()  
             os.fsync(file.fileno()) 
 
-
-
+    #触发语音交互
     def on_interact(self, interact: Interact):
         self.interactive.append(interact)
         MyThread(target=self.__update_mood, args=[interact.interact_type]).start()
-        MyThread(target=storer.storage_live_interact, args=[interact]).start()
-
-
-    # 适应模型计算(用于学习真人的性格特质，开源版本暂不使用)
-    def __fay(self, index):
-        if 0 < index < 8:
-            self.X[0][index] += 1
-        # PRED = 1 /(1 + tf.exp(-tf.matmul(tf.constant(self.X,tf.float32), tf.constant(self.W,tf.float32))))
-        PRED = np.sum(self.X.reshape(-1) * self.W.reshape(-1))
-        if 0 < index < 8:
-            print('***PRED:{0}***'.format(PRED))
-            print(self.X.reshape(-1) * self.W.reshape(-1))
-        return PRED
 
     # 发送情绪
     def __send_mood(self):
@@ -414,6 +340,7 @@ class FeiFei:
         if self.mood <= -1:
             self.mood = -1
 
+    #获取不同情绪声音
     def __get_mood_voice(self):
         voice = tts_voice.get_voice_of(config_util.config["attribute"]["voice"])
         if voice is None:
@@ -442,14 +369,13 @@ class FeiFei:
                 if not config_util.config["interact"]["playSound"]: # 非展板播放
                     content = {'Topic': 'Unreal', 'Data': {'Key': 'text', 'Value': self.a_msg}}
                     wsa_server.get_instance().add_cmd(content)
-                MyThread(target=storer.storage_live_interact, args=[Interact('Fay', 0, {'user': 'Fay', 'msg': self.a_msg})]).start()
                 if config_util.config["source"]["tts_enabled"]:
                     util.log(1, '合成音频...')
                     tm = time.time()
                     result = self.sp.to_sample(self.a_msg, self.__get_mood_voice())
                     util.log(1, '合成音频完成. 耗时: {} ms 文件:{}'.format(math.floor((time.time() - tm) * 1000), result))
                     if result is not None:            
-                        MyThread(target=self.__send_or_play_audio, args=[result, styleType]).start()
+                        MyThread(target=self.__process_output_audio, args=[result, styleType]).start()
                         return result
                 else:
                     util.log(1, '问答处理总时长：{} ms'.format(math.floor((time.time() - self.last_quest_time) * 1000)))
@@ -466,6 +392,7 @@ class FeiFei:
         self.speaking = False
         return None
 
+    #面板播放声音
     def __play_sound(self, file_url):
         util.log(1, '播放音频...')
         util.log(1, '问答处理总时长：{} ms'.format(math.floor((time.time() - self.last_quest_time) * 1000)))
@@ -473,18 +400,14 @@ class FeiFei:
         pygame.mixer.music.play()
 
 
-    def __send_or_play_audio(self, file_url, say_type):
+    #输出音频处理
+    def __process_output_audio(self, file_url, say_type):
         try:
             try:
-                logging.getLogger('eyed3').setLevel(logging.ERROR)
-                audio_length = eyed3.load(file_url).info.time_secs #mp3音频长度
+                with wave.open(file_url, 'rb') as wav_file: #wav音频长度
+                    audio_length = wav_file.getnframes() / float(wav_file.getframerate())
             except Exception as e:
                 audio_length = 3
-
-            # with wave.open(file_url, 'rb') as wav_file: #wav音频长度
-            #     audio_length = wav_file.getnframes() / float(wav_file.getframerate())
-            #     print(audio_length)
-            # if audio_length <= config_util.config["interact"]["maxInteractTime"] or say_type == "script":
             if config_util.config["interact"]["playSound"]: # 展板播放
                 self.__play_sound(file_url)
             else:#发送音频给ue和socket
@@ -540,6 +463,7 @@ class FeiFei:
         except Exception as e:
             print(e)
 
+    #检查远程音频连接状态
     def __device_socket_keep_alive(self):
         while True:
             if self.deviceConnect is not None:
@@ -551,6 +475,7 @@ class FeiFei:
                     self.deviceConnect = None
             time.sleep(1)
 
+    #远程音频连接
     def __accept_audio_device_output_connect(self):
         self.deviceSocket = socket.socket(socket.AF_INET,socket.SOCK_STREAM) 
         self.deviceSocket.bind(("0.0.0.0",10001))   
@@ -567,17 +492,15 @@ class FeiFei:
         except Exception as err:
             pass
 
-    def set_sleep(self, sleep):
-        self.sleep = sleep
-
+    #启动核心服务
     def start(self):
         if cfg.ltp_mode == "cemotion":
             from cemotion import Cemotion
             self.cemotion = Cemotion()
         MyThread(target=self.__send_mood).start()
-        MyThread(target=self.__auto_speak).start()
+        MyThread(target=self.__process_speak_message).start()
 
-
+    #停止核心服务
     def stop(self):
         self.__running = False
         song_player.stop()
@@ -593,4 +516,3 @@ class FeiFei:
             self.deviceConnect = None
         if self.deviceSocket is not None:
             self.deviceSocket.close()
-
