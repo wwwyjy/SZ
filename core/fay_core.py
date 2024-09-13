@@ -14,7 +14,7 @@ from core import wsa_server, tts_voice, song_player
 from core.interact import Interact
 from core.tts_voice import EnumVoice
 from scheduler.thread_manager import MyThread
-from utils import util, storer, config_util
+from utils import util, config_util
 from core import qa_service
 from utils import config_util as cfg
 from core import content_db
