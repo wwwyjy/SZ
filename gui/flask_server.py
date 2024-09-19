@@ -1,9 +1,9 @@
 import importlib
 import json
 import time
-
+import os
 import pyaudio
-from flask import Flask, render_template, request, jsonify, Response
+from flask import Flask, render_template, request, jsonify, Response, send_file
 from flask_cors import CORS
 
 import fay_booter
@@ -15,8 +15,10 @@ from utils import config_util, util
 from core import wsa_server
 from core import fay_core
 from core import content_db
+from core.interact import Interact
 from ai_module import yolov8
 from core import member_db
+import fay_booter
 from flask_httpauth import HTTPBasicAuth
 
 
@@ -222,24 +224,28 @@ def api_stop_live():
 def api_send():
     data = request.values.get('data')
     info = json.loads(data)
-    fay_core.process_text_message(info['msg'], info['username'])
+    interact = Interact("text", 1, {'user': info['username'], 'msg': info['msg']})
+    util.printInfo(3, "文字发送按钮", '{}'.format(interact.data["msg"]), time.time())
+    fay_booter.feiFei.on_interact(interact)
     return '{"result":"successful"}'
 
+#获取指定用户的消息记录
 @__app.route('/api/get-msg', methods=['post'])
 def api_get_Msg():
     data = request.form.get('data')
     data = json.loads(data)
+    uid = member_db.new_instance().find_user(data["username"])
     contentdb = content_db.new_instance()
-    if data["uid"] == "all":
-        list = contentdb.get_list('all','desc',1000)
+    if uid == 0:
+        return json.dumps({'list': []})
     else:
-        list = contentdb.get_list('all','desc',1000, data["uid"])
+        list = contentdb.get_list('all','desc',1000, uid)
     relist = []
     i = len(list)-1
     while i >= 0:
         relist.append(dict(type=list[i][0], way=list[i][1], content=list[i][2], createtime=list[i][3], timetext=list[i][4], username=list[i][5]))
         i -= 1
-
+    
     return json.dumps({'list': relist})
 
 @__app.route('/v1/chat/completions', methods=['post'])
@@ -258,7 +264,9 @@ def api_send_v1_chat_completions():
         username = 'User'
 
     model = data.get('model', 'fay')
-    text = fay_core.process_text_message(last_content, username)
+    interact = Interact("text", 1, {'user': username, 'msg': last_content})
+    util.printInfo(3, "文字沟通接口", '{}'.format(interact.data["msg"]), time.time())
+    text = fay_booter.feiFei.on_interact(interact)
 
     if model == 'fay-streaming':
         return stream_response(text)
@@ -335,7 +343,13 @@ def home_get():
 @__app.route('/', methods=['post'])
 @auth.login_required
 def home_post():
+    wsa_server.get_web_instance.add_cmd({"is_connect": wsa_server.get_instance().isConnect}) #同步数字人连接状态
     return __get_template()
+
+@__app.route('/audio/<filename>')
+def serve_audio(filename):
+    audio_file = os.path.join(os.getcwd(), "samples", filename)
+    return send_file(audio_file)
 
 def run():
     server = pywsgi.WSGIServer(('0.0.0.0',5000), __app)

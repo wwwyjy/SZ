@@ -8,7 +8,7 @@ import _thread as thread
 from aliyunsdkcore.client import AcsClient
 from aliyunsdkcore.request import CommonRequest
 
-from core import wsa_server, song_player
+from core import wsa_server
 from scheduler.thread_manager import MyThread
 from utils import util
 from utils import config_util as cfg
@@ -41,10 +41,6 @@ def __post_token():
     else:
        authorize.add(cfg.key_ali_nls_key_id, _token, info['Token']['ExpireTime']*1000) 
 
-
-
-
-
 def __runnable():
     while __running:
         __post_token()
@@ -57,7 +53,7 @@ def start():
 
 class ALiNls:
     # 初始化
-    def __init__(self):
+    def __init__(self, username):
         self.__URL = 'wss://nls-gateway-cn-shenzhen.aliyuncs.com/ws/v1'
         self.__ws = None
         self.__connected = False
@@ -67,6 +63,7 @@ class ALiNls:
         self.__task_id = ''
         self.done = False
         self.finalResults = ""
+        self.username = username
 
     def __create_header(self, name):
         if name == 'StartTranscription':
@@ -80,10 +77,6 @@ class ALiNls:
         }
         return header
 
-    def __on_msg(self):
-        if "暂停" in self.finalResults or "不想听了" in self.finalResults or "别唱了" in self.finalResults:
-            song_player.stop()
-
     # 收到websocket消息的处理
     def on_message(self, ws, message):
         try:
@@ -93,18 +86,17 @@ class ALiNls:
             if name == 'SentenceEnd':
                 self.done = True
                 self.finalResults = data['payload']['result']
-                wsa_server.get_web_instance().add_cmd({"panelMsg": self.finalResults})
+                wsa_server.get_web_instance().add_cmd({"panelMsg": self.finalResults, "Username" : self.username})
                 if not cfg.config["interact"]["playSound"]: # 非展板播放
-                    content = {'Topic': 'Unreal', 'Data': {'Key': 'log', 'Value': self.finalResults}}
+                    content = {'Topic': 'Unreal', 'Data': {'Key': 'log', 'Value': self.finalResults}, 'Username' : self.username}
                     wsa_server.get_instance().add_cmd(content)
-                self.__on_msg()
+                ws.close()#TODO
             elif name == 'TranscriptionResultChanged':
                 self.finalResults = data['payload']['result']
-                wsa_server.get_web_instance().add_cmd({"panelMsg": self.finalResults})
+                wsa_server.get_web_instance().add_cmd({"panelMsg": self.finalResults, "Username" : self.username})
                 if not cfg.config["interact"]["playSound"]: # 非展板播放
-                    content = {'Topic': 'Unreal', 'Data': {'Key': 'log', 'Value': self.finalResults}}
+                    content = {'Topic': 'Unreal', 'Data': {'Key': 'log', 'Value': self.finalResults}, 'Username' : self.username}
                     wsa_server.get_instance().add_cmd(content)
-                self.__on_msg()
 
         except Exception as e:
             print(e)
@@ -115,10 +107,10 @@ class ALiNls:
             except Exception as e:
                 print(e)
 
-    # 收到websocket错误的处理
+    # 收到websocket的关闭要求
     def on_close(self, ws, code, msg):
         self.__connected = False
-        print("### CLOSE:", msg)
+        # print("### CLOSE:", msg)
 
     # 收到websocket错误的处理
     def on_error(self, ws, error):
@@ -127,9 +119,7 @@ class ALiNls:
     # 收到websocket连接建立的处理
     def on_open(self, ws):
         self.__connected = True
-
-        # print("连接上了！！！")
-
+        #为了兼容多路asr，关闭过程数据
         def run(*args):
             while self.__connected:
                 try:
@@ -144,7 +134,7 @@ class ALiNls:
                         #print('发送 ------> ' + str(type(frame)))
                 except Exception as e:
                     print(e)
-                time.sleep(0.04)
+                time.sleep(0.0001)
 
         thread.start_new_thread(run, ())
 
@@ -154,10 +144,9 @@ class ALiNls:
         self.__frames.clear()
         self.__ws = websocket.WebSocketApp(self.__URL + '?token=' + _token, on_message=self.on_message)
         self.__ws.on_open = self.on_open
+        self.__ws.on_error = self.on_error
+        self.__ws.on_close = self.on_close
         self.__ws.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE})
-
-    def add_frame(self, frame):
-        self.__frames.append(frame)
 
     def send(self, buf):
         self.__frames.append(buf)
@@ -175,7 +164,7 @@ class ALiNls:
                 "speech_noise_threshold": -1
             }
         }
-        self.add_frame(data)
+        self.send(data)
 
     def end(self):
         if self.__connected:
@@ -186,7 +175,7 @@ class ALiNls:
                         self.__ws.send(json.dumps(frame))
                     elif type(frame) == bytes:
                         self.__ws.send(frame, websocket.ABNF.OPCODE_BINARY)
-                    time.sleep(0.4)
+                    time.sleep(0.0001)
                 self.__frames.clear()
                 frame = {"header": self.__create_header('StopTranscription')}
                 self.__ws.send(json.dumps(frame))

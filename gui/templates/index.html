@@ -81,11 +81,6 @@
                                             <el-input v-model="interact_QnA" placeholder="请输入内容" :disabled="!configEditable"></el-input>
                                         </li>
                                         <br>
-                                        <li>
-                                            <p>使用面板播放：</p>
-                                           <p style="text-align: left;" v-if="play_sound_enabled" :disabled="!configEditable">是</p>
-                                           <p style="text-align: left;" v-else>否</p>
-                                        </li>
                                        
                                         <li>
                                             <p>声音选择：{{attribute_voice}}</p>
@@ -128,11 +123,17 @@
                                             </el-select>
                                         </li>
                                         <br>
-                                        <li>
+                                        <li style="display:none;">
                                             <p>语音合成：</p>
                                             <el-switch v-model="tts_enabled" active-color="#13ce66"
                                             inactive-color="#ff4949" :disabled="!configEditable">
                                         </el-switch>
+                                        </li>
+                                        <li>
+                                            <p>本机播放：</p>
+                                            <el-switch v-model="play_sound_enabled" active-color="#13ce66"
+                                                inactive-color="#ff4949" :disabled="!configEditable" >
+                                            </el-switch>
                                         </li>
                                     </ul>
                                 </div>
@@ -188,8 +189,8 @@
                         <div class="container">
                             <div class="filter">
                                 <el-select  v-model="selectedUser" placeholder="对话筛选" @change="handleUserChange">
-                                    <el-option label="全员" value="all"></el-option>
-                                    <el-option v-for="user in member_list" :key="user[0]" :label="user[1]" :value="user[0]"></el-option>
+                                    <el-option label="默认用户" value="User"></el-option>
+                                    <el-option v-for="user in member_list" :key="user[0]" :label="user[1]" :value="user[1]" v-if="user[1]!='User'"></el-option>
                                 </el-select>
                             </div>
                             <div class="content">
@@ -230,7 +231,7 @@
                                 <div class="button-area">
                                     <el-select style="width: 125px;"  v-model="sendUser" placeholder="对话用户选择" >
                                         <el-option label="默认用户" value="User"></el-option>
-                                        <el-option v-for="user in member_list" :key="user[0]" :label="user[1]" :value="user[0]" v-if="user[1]!='User'"></el-option>
+                                        <el-option v-for="user in member_list" :key="user[0]" :label="user[1]" :value="user[1]" v-if="user[1]!='User'"></el-option>
                                         <el-option label="自定义" value="others"></el-option>
                                     </el-select>
                                     <el-input v-show="sendUser === 'others'" v-model="othersUser" placeholder="输入用户名" style="width: 120px; margin-left: 20px;"></el-input>
