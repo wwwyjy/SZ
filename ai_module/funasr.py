@@ -14,7 +14,7 @@ from utils import util
 
 class FunASR:
     # 初始化
-    def __init__(self):
+    def __init__(self, username):
         self.__URL = "ws://{}:{}".format(cfg.local_asr_ip, cfg.local_asr_port)
         self.__ws = None
         self.__connected = False
@@ -26,23 +26,19 @@ class FunASR:
         self.finalResults = ""
         self.__reconnect_delay = 1
         self.__reconnecting = False
+        self.username = username
 
-
-
-    def __on_msg(self):
-        pass
     
     # 收到websocket消息的处理
     def on_message(self, ws, message):
         try:
             self.done = True
             self.finalResults = message
-            wsa_server.get_web_instance().add_cmd({"panelMsg": self.finalResults})
+            wsa_server.get_web_instance().add_cmd({"panelMsg": self.finalResults, "Username" : self.username})
             if not cfg.config["interact"]["playSound"]: # 非展板播放
-                content = {'Topic': 'Unreal', 'Data': {'Key': 'log', 'Value': self.finalResults}}
+                content = {'Topic': 'Unreal', 'Data': {'Key': 'log', 'Value': self.finalResults}, 'Username' : self.username}
                 wsa_server.get_instance().add_cmd(content)
-            self.__on_msg()
-
+   
         except Exception as e:
             print(e)
 
@@ -138,7 +134,6 @@ class FunASR:
                         self.__ws.send(json.dumps(frame))
                     elif type(frame) == bytes:
                         self.__ws.send(frame, websocket.ABNF.OPCODE_BINARY)
-                    time.sleep(0.4)
                 self.__frames.clear()
                 frame = {'vad_need':False,'state':'StopTranscription'}
                 self.__ws.send(json.dumps(frame))

@@ -90,10 +90,11 @@ new Vue({
             }],
             tts_enabled:true,
             configEditable: true,
-            selectedUser:'all',
+            selectedUser:'User',
             to_human: false,
             sendUser:'User',
-            othersUser:""
+            othersUser:"",
+            web_wss:undefined
         }
     },
     created() {
@@ -106,6 +107,12 @@ new Vue({
             this.send(1)
         }
         },handleUserChange() {
+            if (this.web_wss && this.web_wss.readyState === WebSocket.OPEN) {
+                let data = {
+                    Username: this.selectedUser
+                };
+                this.web_wss.send(JSON.stringify(data));
+            } 
             this.getMsgList();
         },
         handleTabsEdit(targetName, action) {
@@ -172,10 +179,11 @@ new Vue({
         connectWS() {
             let _this = this;
             socket = new WebSocket('ws://localhost:10003')
-            socket.onopen = function () {
+            _this.web_wss = socket
+            _this.web_wss.onopen = function () {
                 // console.log('客户端连接上了服务器');
             }
-            socket.onmessage = function (e) {
+            _this.web_wss.onmessage = function (e) {
                 console.log(" --> " + e.data)
                 let data = JSON.parse(e.data)
                 _this.live_broadcast = (data.time % 2) === 0
@@ -237,20 +245,21 @@ new Vue({
                     if (!userExists) {
                         _this.member_list.push([panelReply['uid'], panelReply['username']]);
                     }
-                    if (_this.selectedUser == "all" || panelReply['uid'] == _this.selectedUser ){
+                    if (panelReply['username'] == _this.selectedUser ){
                         _this.addMsg(panelReply)
                     }
                 }
                 let is_connect = data.is_connect
                 if(is_connect != undefined){
                     _this.is_connect = is_connect
-                    if (is_connect){
-                        _this.play_sound_enabled = false
-                        _this.postData()
-                    }else{
-                        _this.play_sound_enabled = true
-                        _this.postData()
-                    }
+                    _this.postData()
+                    // if (is_connect){
+                    //     _this.play_sound_enabled = false
+                    //     _this.postData()
+                    // }else{
+                    //     _this.play_sound_enabled = true
+                    //     _this.postData()
+                    // }
                 }
                 let remote_audio_connect = data.remote_audio_connect
                 if(remote_audio_connect != undefined){
@@ -576,7 +585,7 @@ new Vue({
             xhr.open("post", url)
             xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded")
             let send_data = {
-                "uid": _this.selectedUser,
+                "username": _this.selectedUser,
             };
             xhr.send('data=' + JSON.stringify(send_data));
             let executed = false
@@ -630,7 +639,8 @@ new Vue({
                 'content' : data['content'] ,
                 'timetext' :  _this.getCurrentTime() ,
                 'type' : data['type'] ,
-                'way' : 'send' 
+                'way' : 'send',
+                'username' : data['username']  
             } 
             if (data['type'] == 'fay'){
                 _this.loading = false;

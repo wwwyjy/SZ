@@ -33,11 +33,7 @@ def printInfo(level, sender, text, send_time=-1):
     logStr = '[{}][{}] {}'.format(format_time, sender, text)
     print(logStr)
     if level >= 3:
-        wsa_server.get_web_instance().add_cmd({"panelMsg": text})
-        if not config_util.config["interact"]["playSound"]: # 非展板播放
-            content = {'Topic': 'Unreal', 'Data': {'Key': 'log', 'Value': text}}
-            wsa_server.get_instance().add_cmd(content)
-    MyThread(target=__write_to_file, args=[logStr]).start()
+        MyThread(target=__write_to_file, args=[logStr]).start()
 
 
 def log(level, text):

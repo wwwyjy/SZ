@@ -1,5 +1,6 @@
 #入口文件main
 import os
+os.environ['PATH'] += os.pathsep + os.path.join(os.getcwd(), "test", "ovr_lipsync", "ffmpeg", "bin")
 import sys
 import time
 from utils import config_util
@@ -9,6 +10,7 @@ from gui import flask_server
 from gui.window import MainWindow
 from core import content_db
 
+
 #载入配置
 config_util.load_config()
 
@@ -16,14 +18,6 @@ config_util.load_config()
 if config_util.start_mode == 'common':
     from PyQt5 import QtGui
     from PyQt5.QtWidgets import QApplication
-
-#nlp是否为langchain
-if config_util.key_chat_module == 'langchain':
-    from ai_module import nlp_langchain
-
-#nlp是否为privategpt
-if config_util.key_chat_module == 'privategpt':    
-    from ai_module import nlp_privategpt
 
 #音频清理
 def __clear_samples():
@@ -63,12 +57,6 @@ if __name__ == '__main__':
 
     #启动http服务器
     flask_server.start()
-
-    #加载本地知识库
-    if config_util.key_chat_module == 'langchain':
-        nlp_langchain.save_all()
-    if config_util.key_chat_module == 'privategpt':
-        nlp_privategpt.save_all()
 
     #普通模式下启动窗口
     if config_util.start_mode == 'common':    

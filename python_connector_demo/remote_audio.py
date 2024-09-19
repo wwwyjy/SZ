@@ -26,22 +26,19 @@ def receive_audio(client):
     while True:
         data = client.recv(9)
         filedata = b''
-        if b"\x00\x01\x02\x03\x04\x05\x06\x07\x08" == data: #mp3文件开始传输标志
+        if b"\x00\x01\x02\x03\x04\x05\x06\x07\x08" == data: #文件开始传输标志
             while True:
                 data = client.recv(1024)
                 filedata += data
                 filedata = filedata.replace(b'\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8', b"") #去除心跳信息
-                if b"\x08\x07\x06\x05\x04\x03\x02\x01\x00" == filedata[-9:]:#mp3文件结束传输标志
+                if b"\x08\x07\x06\x05\x04\x03\x02\x01\x00" == filedata[-9:]:#文件结束传输标志
                     filedata = filedata[:-9]
                     break
             print("receive audio end:{}".format(len(filedata)), end="")
 
-            filename = "sample/recv_{}.wav".format(time.time())
-            with wave.open(filename, 'wb') as wf:
-                        wf.setnchannels(1)
-                        wf.setsampwidth(2)
-                        wf.setframerate(16000)
-                        wf.writeframes(filedata)
+            filename = "samples/recv_{}.wav".format(time.time())
+            with open(filename, 'wb') as wf:
+                wf.write(filedata)
 
             pygame.mixer.music.load(filename)
             pygame.mixer.music.play()
@@ -52,7 +49,8 @@ def receive_audio(client):
 if __name__ == "__main__":
     client = socket.socket()
     client.connect(("127.0.0.1", 10001))
-    client.send(b"<username>user1</username>")
+    client.send(b"<username>xszyou</username>")
+    # client.send(b"<output>False<output>")
     time.sleep(1)
     pygame.mixer.init()
     thread_manager.MyThread(target=send_audio, args=(client,)).start()

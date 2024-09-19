@@ -17,7 +17,7 @@ class Speech:
             self.__speech_config = speechsdk.SpeechConfig(subscription=cfg.key_ms_tts_key, region=cfg.key_ms_tts_region)
             self.__speech_config.speech_recognition_language = "zh-CN"
             self.__speech_config.speech_synthesis_voice_name = "zh-CN-XiaoxiaoNeural"
-            self.__speech_config.set_speech_synthesis_output_format(speechsdk.SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3)
+            self.__speech_config.set_speech_synthesis_output_format(speechsdk.SpeechSynthesisOutputFormat.Riff16Khz16BitMonoPcm)
             self.__synthesizer = speechsdk.SpeechSynthesizer(speech_config=self.__speech_config, audio_config=None)
             self.ms_tts = True
         self.__connection = None
@@ -80,10 +80,11 @@ class Speech:
             result = self.__synthesizer.speak_ssml(ssml)
             audio_data_stream = speechsdk.AudioDataStream(result)
 
-            file_url = './samples/sample-' + str(int(time.time() * 1000)) + '.mp3'
+            file_url = './samples/sample-' + str(int(time.time() * 1000)) + '.wav'
             audio_data_stream.save_to_wav_file(file_url)
             if result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
-                wav_url = self.convert_mp3_to_wav(file_url)
+                # wav_url = self.convert_mp3_to_wav(file_url)
+                wav_url = file_url
                 self.__history_data.append((voice_name, style, text, wav_url))
                 return wav_url
             else:
