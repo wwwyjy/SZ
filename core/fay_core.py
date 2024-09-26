@@ -32,6 +32,8 @@ from core import member_db
 import threading
 import functools
 
+from ai_module import nlp_tongyi
+
 #线程同步注解
 def synchronized(func):
   @functools.wraps(func)
@@ -68,8 +70,8 @@ modules = {
     "nlp_xingchen": nlp_xingchen,
     "nlp_langchain": nlp_langchain,
     "nlp_ollama_api": nlp_ollama_api,
-    "nlp_coze": nlp_coze
-
+    "nlp_coze": nlp_coze,
+    "nlp_tongyi": nlp_tongyi
 }
 
 #大语言模型回复
@@ -82,6 +84,7 @@ def handle_chat_message(msg, username='User'):
         cfg.load_config()
         module_name = "nlp_" + cfg.key_chat_module
         selected_module = modules.get(module_name)
+
         if selected_module is None:
             raise RuntimeError('请选择正确的nlp模型')   
         if cfg.key_chat_module == 'rasa':
